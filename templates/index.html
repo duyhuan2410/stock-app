@@ -1,0 +1,696 @@
+<!-- File: templates/index.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+{% if current_user.is_authenticated %}
+    <!-- Banner -->
+    <section id="bannerSection" class="min-h-screen flex items-center justify-start relative bg-cover bg-center bg-no-repeat" style="background-image: url('/static/stock-banner.jpg');">
+        <!-- Lớp phủ (overlay) để làm chữ dễ đọc hơn -->
+        <div class="absolute inset-0 bg-black opacity-50"></div>
+        <div class="relative z-10 max-w-7xl mx-auto flex-1 px-6 pt-50">
+            <h2 class="text-4xl font-bold text-orange-500 mb-2 text-left">Data Insight</h2>
+            <p class="text-2xl font-semibold text-white mb-4 text-left">Biến dữ liệu thành lợi nhuận</p>
+            <button class="px-8 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-lg">
+                Tham khảo cổ phiếu ngay
+            </button>
+        </div>
+    </section>
+
+    <!-- Market Overview -->
+    <section id="marketOverview" class="content-hidden max-w-7xl mx-auto py-6 px-4">
+        <div class="flex flex-nowrap justify-start gap-3 overflow-x-auto">
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">Dow Jones</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="dowValue" class="index-value text-white"></p>
+                <p id="dowChange" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">FTSE 100</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="ftseValue" class="index-value text-white"></p>
+                <p id="ftseChange" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">DAX</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="gdaxiValue" class="index-value text-white"></p>
+                <p id="gdaxiChange" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">S&P 500</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="sp500Value" class="index-value text-white"></p>
+                <p id="sp500Change" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">NASDAQ</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="nasdaqValue" class="index-value text-white"></p>
+                <p id="nasdaqChange" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">Nikkei 225</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="n225Value" class="index-value text-white"></p>
+                <p id="n225Change" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">Russell 2000</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="rutValue" class="index-value text-white"></p>
+                <p id="rutChange" class="index-change"></p>
+            </div>
+            <div class="market-item text-white">
+                <div class="flex justify-between items-center">
+                    <span class="index-name">VIX</span>
+                    <span class="text-yellow-400">★</span>
+                </div>
+                <p id="vixValue" class="index-value text-white"></p>
+                <p id="vixChange" class="index-change"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="content-hidden max-w-7xl mx-auto py-6 px-4">
+        <!-- Tabs -->
+        <div class="flex justify-center space-x-4 mb-6">
+            <button class="tab px-6 py-2 rounded-lg font-medium active" onclick="showTab('business')">Thông tin công ty</button>
+            <button class="tab px-6 py-2 rounded-lg font-medium" onclick="showTab('financials')">Biểu đồ tài chính</button>
+            <button class="tab px-6 py-2 rounded-lg font-medium" onclick="showTab('chart')">Biểu đồ giá</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="business" class="tab-content">
+            <div id="companyInfo" class="bg-gray-800 rounded-lg p-6 shadow-lg"></div>
+        </div>
+        <div id="financials" class="tab-content hidden">
+            <div class="financial-charts-grid">
+                <div id="netIncomeChart"></div>
+                <div id="totalRevenueChart"></div>
+                <div id="grossProfitChart"></div>
+                <div id="operatingIncomeChart"></div>
+                <div id="longTermDebtChart"></div>
+                <div id="freeCashFlowChart"></div>
+            </div>
+        </div>
+        <div id="chart" class="tab-content hidden">
+            <div class="relative">
+                <div id="stockChart" class="w-full h-[800px]"></div>
+                <!-- Nút chọn ngày và indicator -->
+                <div class="chart-controls absolute top-[10px] left-4 bg-gray-800 rounded-lg shadow-md p-2 flex space-x-2">
+                    <button class="interval-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="1m">1m</button>
+                    <button class="interval-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="4h">4h</button>
+                    <button class="interval-btn px-2 py-1 bg-orange-500 text-white rounded-md text-xs" data-value="1d">1d</button>
+                    <button class="interval-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="1w">1w</button>
+                    <button class="interval-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="1mo">1mo</button>
+                    <button class="period-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="3mo">3M</button>
+                    <button class="period-btn px-2 py-1 bg-orange-500 text-white rounded-md text-xs" data-value="1y">1Y</button>
+                    <button class="period-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="3y">3Y</button>
+                    <button class="period-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="5y">5Y</button>
+                    <button class="period-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs" data-value="all">All</button>
+                    <div class="relative">
+                        <button class="indicator-btn px-2 py-1 bg-gray-700 text-white rounded-md text-xs flex items-center" onclick="toggleIndicatorDropdown()">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M4 4h16v16H4z"></path>
+                                <path d="M4 8h16"></path>
+                                <path d="M8 4v16"></path>
+                            </svg>
+                            Indicators
+                        </button>
+                        <div id="indicatorDropdown" class="dropdown-menu absolute top-full left-0 mt-2 bg-gray-800 rounded-lg shadow-lg p-2 opacity-0 transform -translate-y-2">
+                            <label class="block px-2 py-1 text-sm text-white"><input type="checkbox" value="sma10" onchange="updateIndicators()"> SMA10</label>
+                            <label class="block px-2 py-1 text-sm text-white"><input type="checkbox" value="sma20" onchange="updateIndicators()"> SMA20</label>
+                            <label class="block px-2 py-1 text-sm text-white"><input type="checkbox" value="rsi" onchange="updateIndicators()"> RSI</label>
+                            <label class="block px-2 py-1 text-sm text-white"><input type="checkbox" value="macd" onchange="updateIndicators()"> MACD</label>
+                            <label class="block px-2 py-1 text-sm text-white"><input type="checkbox" value="bollinger" onchange="updateIndicators()"> Bollinger Bands</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .dropdown-menu {
+            display: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .dropdown-menu.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .tab {
+            transition: all 0.3s ease;
+            background-color: #2d3e6a;
+            color: #ffffff;
+        }
+        .tab.active {
+            background-color: #f97316;
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+        .market-item {
+            background-color: #2d3e6a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 150px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        .market-item .index-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .market-item .index-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .market-item .index-change {
+            font-size: 0.8rem;
+        }
+        #stockChart {
+            width: 100%;
+            height: 800px;
+        }
+        #financialChart {
+            background: #1e2a44;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .company-logo {
+            transition: transform 0.3s ease;
+        }
+        .company-logo:hover {
+            transform: scale(1.1);
+        }
+        .search-btn {
+            background-color: #f97316;
+            color: #ffffff;
+        }
+        .search-btn:hover {
+            background-color: #ea580c;
+        }
+        .content-hidden {
+            display: none !important;
+        }
+        .financial-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            justify-items: center;
+            padding: 1rem;
+        }
+        .financial-charts-grid > div {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+        }
+        .chart-controls {
+            z-index: 10;
+        }
+        .lightweight-charts-price-line-label {
+            font-size: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin-right: 5px;
+        }
+    </style>
+
+    <script>
+        let selectedInterval = '1d';
+        let selectedPeriod = '1y';
+        let selectedIndicators = [];
+        let chartInstance = null;
+        let candlestickSeries = null;
+        let volumeSeries = null;
+        let sma10Series = null;
+        let sma20Series = null;
+        let bbUpperSeries = null;
+        let bbMiddleSeries = null;
+        let bbLowerSeries = null;
+        let macdSeries = null;
+        let rsiSeries = null;
+        let isDataLoaded = false;
+
+        function toggleIndicatorDropdown() {
+            document.getElementById('indicatorDropdown').classList.toggle('active');
+        }
+
+        function updateIndicators() {
+            selectedIndicators = Array.from(document.querySelectorAll('#indicatorDropdown input:checked')).map(input => input.value);
+            loadStockChart();
+        }
+
+        document.querySelectorAll('.interval-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.interval-btn').forEach(b => b.classList.remove('bg-orange-500'));
+                btn.classList.add('bg-orange-500');
+                selectedInterval = btn.getAttribute('data-value');
+                loadStockChart();
+            });
+        });
+
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('bg-orange-500'));
+                btn.classList.add('bg-orange-500');
+                selectedPeriod = btn.getAttribute('data-value');
+                loadStockChart();
+            });
+        });
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.remove('hidden');
+
+            if (tabId === 'chart') {
+                loadStockChart();
+            } else if (tabId === 'financials') {
+                loadFinancialChart();
+            }
+        }
+
+        function loadMarketOverview() {
+            const indices = [
+                { id: 'dow', symbol: '^DJI', valueElement: 'dowValue', changeElement: 'dowChange' },
+                { id: 'ftse', symbol: '^FTSE', valueElement: 'ftseValue', changeElement: 'ftseChange' },
+                { id: 'gdaxi', symbol: '^GDAXI', valueElement: 'gdaxiValue', changeElement: 'gdaxiChange' },
+                { id: 'sp500', symbol: '^GSPC', valueElement: 'sp500Value', changeElement: 'sp500Change' },
+                { id: 'nasdaq', symbol: '^IXIC', valueElement: 'nasdaqValue', changeElement: 'nasdaqChange' },
+                { id: 'n225', symbol: '^N225', valueElement: 'n225Value', changeElement: 'n225Change' },
+                { id: 'rut', symbol: '^RUT', valueElement: 'rutValue', changeElement: 'rutChange' },
+                { id: 'vix', symbol: '^VIX', valueElement: 'vixValue', changeElement: 'vixChange' }
+            ];
+
+            indices.forEach(index => {
+                fetch(`/api/index/${index.symbol}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error(`Error fetching data for ${index.id}: ${data.error}`);
+                            document.getElementById(index.valueElement).innerText = 'N/A';
+                            document.getElementById(index.changeElement).innerText = '';
+                            return;
+                        }
+
+                        const value = data.close.toFixed(2);
+                        const change = data.change.toFixed(2);
+                        const percentChange = data.percent_change.toFixed(2);
+                        const changeClass = change >= 0 ? 'text-green-400' : 'text-red-400';
+                        document.getElementById(index.valueElement).innerText = value;
+                        document.getElementById(index.changeElement).innerHTML = `${change} (${percentChange}%)`;
+                        document.getElementById(index.changeElement).classList.add(changeClass);
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching ${index.id}:`, error);
+                        document.getElementById(index.valueElement).innerText = 'N/A';
+                        document.getElementById(index.changeElement).innerText = '';
+                    });
+            });
+        }
+
+        function loadStockChart() {
+            const symbol = document.getElementById('stockInput').value.toUpperCase();
+            fetch(`/api/stock/${symbol}/${selectedInterval}/${selectedPeriod}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error || !data || data.length === 0) {
+                        document.getElementById('stockChart').innerHTML = `<p class="text-center text-gray-400">No stock data available for ${symbol}.</p>`;
+                        return;
+                    }
+
+                    const chartContainer = document.getElementById('stockChart');
+                    if (chartInstance) {
+                        chartInstance.remove();
+                        chartInstance = null;
+                    }
+
+                    if (typeof LightweightCharts === 'undefined') {
+                        document.getElementById('stockChart').innerHTML = `<p class="text-center text-gray-400">Error: Lightweight Charts library failed to load.</p>`;
+                        console.error("LightweightCharts is not defined. Ensure the script is loaded correctly.");
+                        return;
+                    }
+
+                    chartInstance = LightweightCharts.createChart(chartContainer, {
+                        width: chartContainer.offsetWidth,
+                        height: 800,
+                        layout: {
+                            background: { color: '#1e2a44' },
+                            textColor: '#ffffff',
+                            fontFamily: 'Inter, sans-serif',
+                        },
+                        grid: {
+                            vertLines: { color: '#4b5e8e' },
+                            horzLines: { color: '#4b5e8e' },
+                        },
+                        rightPriceScale: {
+                            borderColor: '#4b5e8e',
+                        },
+                        timeScale: {
+                            borderColor: '#4b5e8e',
+                            timeVisible: true,
+                            secondsVisible: false,
+                        },
+                    });
+
+                    if (typeof chartInstance.addCandlestickSeries !== 'function') {
+                        document.getElementById('stockChart').innerHTML = `<p class="text-center text-gray-400">Error: addCandlestickSeries is not supported in this version of Lightweight Charts.</p>`;
+                        console.error("addCandlestickSeries is not a function. Ensure you're using the correct version of Lightweight Charts.");
+                        return;
+                    }
+
+                    // Biểu đồ giá chính (candlestick), chiếm 70% chiều cao
+                    candlestickSeries = chartInstance.addCandlestickSeries({
+                        upColor: '#10b981',
+                        downColor: '#ef4444',
+                        borderVisible: false,
+                        wickUpColor: '#10b981',
+                        wickDownColor: '#ef4444',
+                        priceScaleId: 'right',
+                        scaleMargins: { top: 0, bottom: 0.3 }, // Candlestick chiếm 70% (từ 0% đến 70%)
+                    });
+
+                    const candlestickData = data.map(d => ({
+                        time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                        open: d.open,
+                        high: d.high,
+                        low: d.low,
+                        close: d.close,
+                    }));
+                    candlestickSeries.setData(candlestickData);
+
+                    // Volume, chiếm 15% chiều cao, từ 70% đến 85%
+                    volumeSeries = chartInstance.addHistogramSeries({
+                        color: '#93c5fd',
+                        priceFormat: { type: 'volume' },
+                        priceScaleId: 'volume',
+                        scaleMargins: { top: 0.7, bottom: 0.15 }, // Volume chiếm 15% (từ 70% đến 85%)
+                    });
+
+                    const volumeData = data.map((d, idx) => ({
+                        time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                        value: d.volume,
+                        color: d.close >= d.open ? '#10b981' : '#ef4444',
+                    }));
+                    volumeSeries.setData(volumeData);
+
+                    chartInstance.priceScale('volume').applyOptions({
+                        scaleMargins: { top: 0.7, bottom: 0.15 },
+                    });
+
+                    // Thêm các indicators nếu được chọn
+                    if (selectedIndicators.includes('sma10')) {
+                        sma10Series = chartInstance.addLineSeries({ color: '#3b82f6', lineWidth: 2 });
+                        const sma10Data = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.sma10,
+                        }));
+                        sma10Series.setData(sma10Data);
+                    }
+                    if (selectedIndicators.includes('sma20')) {
+                        sma20Series = chartInstance.addLineSeries({ color: '#f59e0b', lineWidth: 2 });
+                        const sma20Data = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.sma20,
+                        }));
+                        sma20Series.setData(sma20Data);
+                    }
+                    if (selectedIndicators.includes('bollinger')) {
+                        bbUpperSeries = chartInstance.addLineSeries({ color: '#93c5fd', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted });
+                        bbMiddleSeries = chartInstance.addLineSeries({ color: '#2563eb', lineWidth: 1 });
+                        bbLowerSeries = chartInstance.addLineSeries({ color: '#93c5fd', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted });
+
+                        const bbUpperData = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.bb_upper,
+                        }));
+                        const bbMiddleData = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.bb_middle,
+                        }));
+                        const bbLowerData = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.bb_lower,
+                        }));
+
+                        bbUpperSeries.setData(bbUpperData);
+                        bbMiddleSeries.setData(bbMiddleData);
+                        bbLowerSeries.setData(bbLowerData);
+                    }
+                    if (selectedIndicators.includes('macd')) {
+                        macdSeries = chartInstance.addLineSeries({ color: '#16a34a', lineWidth: 2 });
+                        const macdData = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.macd,
+                        }));
+                        macdSeries.setData(macdData);
+                    }
+                    if (selectedIndicators.includes('rsi')) {
+                        rsiSeries = chartInstance.addLineSeries({
+                            color: '#8b5cf6',
+                            lineWidth: 2,
+                            priceScaleId: 'rsi',
+                        });
+                        const rsiData = data.map(d => ({
+                            time: Math.floor(new Date(d.timestamp).getTime() / 1000),
+                            value: d.rsi,
+                        }));
+                        rsiSeries.setData(rsiData);
+
+                        // Đặt RSI ở 15% phía dưới (từ 85% đến 100%)
+                        chartInstance.priceScale('rsi').applyOptions({
+                            scaleMargins: { top: 0.85, bottom: 0 },
+                            borderColor: '#4b5e8e',
+                            mode: LightweightCharts.PriceScaleMode.Normal,
+                            entireTextOnly: false,
+                            visible: true,
+                            autoScale: true,
+                            scaleMargins: { top: 0.85, bottom: 0 },
+                        });
+
+                        // Thêm các đường tham chiếu cho RSI: 30, 50, 70
+                        rsiSeries.createPriceLine({
+                            price: 70,
+                            color: '#ef4444',
+                            lineWidth: 1,
+                            lineStyle: LightweightCharts.LineStyle.Dotted,
+                            axisLabelVisible: true,
+                            title: '',
+                        });
+                        rsiSeries.createPriceLine({
+                            price: 50,
+                            color: '#ffffff',
+                            lineWidth: 1,
+                            lineStyle: LightweightCharts.LineStyle.Dotted,
+                            axisLabelVisible: true,
+                            title: '',
+                        });
+                        rsiSeries.createPriceLine({
+                            price: 30,
+                            color: '#10b981',
+                            lineWidth: 1,
+                            lineStyle: LightweightCharts.LineStyle.Dotted,
+                            axisLabelVisible: true,
+                            title: '',
+                        });
+                    }
+
+                    chartInstance.timeScale().fitContent();
+                })
+                .catch(error => {
+                    console.error('Error fetching stock data:', error);
+                    document.getElementById('stockChart').innerHTML = `<p class="text-center text-gray-400">Error loading stock data: ${error.message}</p>`;
+                });
+        }
+
+        function loadFinancialChart() {
+            const symbol = document.getElementById('stockInput').value.toUpperCase();
+            fetch(`/api/financials/${symbol}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error || !data || data.length === 0) {
+                        document.getElementById('netIncomeChart').innerHTML = '<p class="text-center text-gray-400">No financial data available.</p>';
+                        return;
+                    }
+
+                    const years = data.map(d => d.year);
+                    const chartConfig = [
+                        { id: 'netIncomeChart', title: 'Net Income', key: 'net_income' },
+                        { id: 'totalRevenueChart', title: 'Total Revenue', key: 'total_revenue' },
+                        { id: 'grossProfitChart', title: 'Gross Profit', key: 'gross_profit' },
+                        { id: 'operatingIncomeChart', title: 'Operating Income', key: 'operating_income' },
+                        { id: 'longTermDebtChart', title: 'Long-Term Debt', key: 'long_term_debt' },
+                        { id: 'freeCashFlowChart', title: 'Free Cash Flow', key: 'free_cash_flow' }
+                    ];
+
+                    chartConfig.forEach(config => {
+                        const values = data.map(d => d[config.key]);
+                        const barTrace = {
+                            x: years,
+                            y: values,
+                            type: 'bar',
+                            name: config.title,
+                            marker: { color: '#f97316' }
+                        };
+                        const lineTrace = {
+                            x: years,
+                            y: values,
+                            type: 'scatter',
+                            mode: 'lines',
+                            name: `${config.title} Trend`,
+                            line: { color: '#ffffff', width: 2 }
+                        };
+                        const layout = {
+                            title: config.title,
+                            plot_bgcolor: '#1e2a44',
+                            paper_bgcolor: '#1e2a44',
+                            font: { color: '#ffffff', family: 'Inter, sans-serif' },
+                            xaxis: { title: 'Year', gridcolor: '#4b5e8e' },
+                            yaxis: { title: 'Value (USD)', gridcolor: '#4b5e8e' },
+                            margin: { t: 50, b: 50, l: 50, r: 50 },
+                            showlegend: true
+                        };
+                        Plotly.newPlot(config.id, [barTrace, lineTrace], layout, { responsive: true });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching financial data:', error);
+                    document.getElementById('netIncomeChart').innerHTML = '<p class="text-center text-gray-400">Error loading financial data.</p>';
+                });
+        }
+
+        function loadStock() {
+            const symbol = document.getElementById('stockInput').value.toUpperCase();
+            if (!symbol) {
+                alert("Vui lòng nhập mã cổ phiếu!");
+                return;
+            }
+
+            const bannerSection = document.getElementById('bannerSection');
+            bannerSection.classList.add('content-hidden');
+
+            const marketOverview = document.getElementById('marketOverview');
+            const mainContent = document.getElementById('mainContent');
+            marketOverview.classList.remove('content-hidden');
+            mainContent.classList.remove('content-hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (!isDataLoaded) {
+                loadMarketOverview();
+                isDataLoaded = true;
+            }
+
+            fetch(`/api/company/${symbol}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('companyInfo').innerHTML = '<p class="text-center text-gray-400">No company info available.</p>';
+                        return;
+                    }
+                    document.getElementById('companyInfo').innerHTML = `
+                        <div class="flex items-center mb-6">
+                            <img src="${data.logo_url}" alt="${data.company_name} Logo" class="company-logo w-16 h-16 rounded-lg mr-4 shadow-md">
+                            <h3 class="text-2xl font-bold text-white">${data.company_name}</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <p><strong class="text-gray-400">Sector:</strong> ${data.sector || 'N/A'}</p>
+                            <p><strong class="text-gray-400">Industry:</strong> ${data.industry || 'N/A'}</p>
+                            <p><strong class="text-gray-400">EPS (TTM):</strong> ${data.trailing_eps?.toFixed(2) || 'N/A'}</p>
+                            <p><strong class="text-gray-400">EPS (Forward):</strong> ${data.forward_eps?.toFixed(2) || 'N/A'}</p>
+                            <p><strong class="text-gray-400">P/E (TTM):</strong> ${data.trailing_pe?.toFixed(2) || 'N/A'}</p>
+                            <p><strong class="text-gray-400">P/E (Forward):</strong> ${data.forward_pe?.toFixed(2) || 'N/A'}</p>
+                            <p><strong class="text-gray-400">ROE:</strong> ${(data.roe * 100)?.toFixed(2) || 'N/A'}%</p>
+                            <p><strong class="text-gray-400">ROA:</strong> ${(data.roa * 100)?.toFixed(2) || 'N/A'}%</p>
+                            <p><strong class="text-gray-400">Market Cap:</strong> ${data.market_cap ? (data.market_cap / 1e9).toFixed(2) + 'B' : 'N/A'}</p>
+                        </div>
+                        <p class="mt-4"><strong class="text-gray-400">Summary:</strong> ${data.business_summary || 'N/A'}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching company info:', error);
+                    document.getElementById('companyInfo').innerHTML = '<p class="text-center text-gray-400">Error loading company info.</p>';
+                });
+
+            if (document.getElementById('financials').classList.contains('hidden') === false) {
+                loadFinancialChart();
+            }
+            if (document.getElementById('chart').classList.contains('hidden') === false) {
+                loadStockChart();
+            }
+        }
+
+        window.onload = function() {
+            document.getElementById('bannerSection').classList.remove('content-hidden');
+            document.getElementById('marketOverview').classList.add('content-hidden');
+            document.getElementById('mainContent').classList.add('content-hidden');
+        };
+    </script>
+{% else %}
+    <!-- Phần đăng nhập/đăng ký -->
+    <section class="max-w-md mx-auto py-12 px-6">
+        <h2 class="text-3xl font-bold text-center mb-6" id="authTitle">Đăng nhập</h2>
+        <form method="POST" class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <input type="hidden" name="action" id="formAction" value="login">
+            <div class="mb-4">
+                <label for="username" class="block text-gray-400">Tên người dùng</label>
+                <input type="text" name="username" id="username" class="w-full p-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-gray-400">Mật khẩu</label>
+                <input type="password" name="password" id="password" class="w-full p-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+            </div>
+            <button type="submit" class="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Đăng nhập</button>
+        </form>
+        <p class="mt-4 text-center text-gray-400">
+            <span id="toggleText">Chưa có tài khoản? </span>
+            <a href="#" onclick="toggleAuthForm()" class="text-orange-500 hover:underline" id="toggleLink">Đăng ký ngay</a>
+        </p>
+    </section>
+
+    <script>
+        function toggleAuthForm() {
+            const title = document.getElementById('authTitle');
+            const formAction = document.getElementById('formAction');
+            const toggleText = document.getElementById('toggleText');
+            const toggleLink = document.getElementById('toggleLink');
+
+            if (formAction.value === 'login') {
+                title.textContent = 'Đăng ký';
+                formAction.value = 'register';
+                toggleText.textContent = 'Đã có tài khoản? ';
+                toggleLink.textContent = 'Đăng nhập';
+            } else {
+                title.textContent = 'Đăng nhập';
+                formAction.value = 'login';
+                toggleText.textContent = 'Chưa có tài khoản? ';
+                toggleLink.textContent = 'Đăng ký ngay';
+            }
+        }
+    </script>
+{% endif %}
+{% endblock %}
